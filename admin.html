@@ -210,7 +210,7 @@ function pintarScores(ctx, disc, d, scores, cal, W, H) {
         if (!pos || val === undefined || val === '') return;
         const isTotal = f.endsWith('t'), isFut = d.type === 'score', isSets = d.type === 'sets' && !isTotal;
         ctx.fillStyle = isSets ? '#ffffff' : '#111111';
-        ctx.font = `bold ${isFut ? 48 : isTotal ? 36 : 28}px Arial, sans-serif`;
+        ctx.font = `900 ${isFut ? 48 : isTotal ? 36 : 28}px Arial, sans-serif`;
         ctx.fillText(String(val), (pos.x/100)*W, (pos.y/100)*H);
       });
     });
