@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Copa Repsol — Calibrador</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.cal-toolbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 20px; background: #0d2144; border-bottom: 1px solid #1a3a60; flex-wrap: wrap;
+}
+.cal-toolbar select {
+  padding: 7px 12px; background: #071629; border: 1px solid #4dd9e8;
+  border-radius: 6px; color: #fff; font-size: 14px; cursor: pointer;
+}
+.cal-toolbar label { color: #8899aa; font-size: 13px; }
+.btn {
+  padding: 7px 16px; border: none; border-radius: 6px;
+  font-weight: 700; font-size: 13px; cursor: pointer; transition: .2s;
+}
+.btn-save  { background: #e8521a; color: #fff; }
+.btn-reset { background: #1a3a60; color: #4dd9e8; border: 1px solid #4dd9e8; }
+.btn-save:hover  { background: #ff6530; }
+.btn-reset:hover { background: #4dd9e8; color: #071629; }
+
+.coord-badge {
+  margin-left: auto; background: #071629; border: 1px solid #1a3a60;
+  border-radius: 6px; padding: 6px 12px; font-family: monospace;
+  font-size: 13px; color: #4dd9e8; min-width: 160px; text-align: center;
+}
+
+.cal-area { padding: 16px 20px; padding-right: 240px; }
+.img-container {
+  position: relative; display: inline-block; line-height: 0;
+  cursor: crosshair; user-select: none; max-width: 100%;
+}
+.img-container img { display: block; max-width: 100%; }
+
+.drag-handle {
+  position: absolute; transform: translate(-50%, -50%);
+  border-radius: 4px; padding: 2px 5px;
+  font-size: 10px; font-weight: 800; line-height: 1.4;
+  cursor: grab; white-space: nowrap; border: 1px solid rgba(0,0,0,.3);
+  box-shadow: 0 1px 4px rgba(0,0,0,.5); transition: box-shadow .1s;
+  user-select: none;
+}
+.drag-handle:active { cursor: grabbing; box-shadow: 0 2px 8px rgba(0,0,0,.8); z-index: 100; }
+.drag-handle.t1  { background: rgba(77,217,232,0.85); color: #071629; }
+.drag-handle.t2  { background: rgba(232,82,26,0.85);  color: #fff; }
+.drag-handle.tot { outline: 2px solid #000; font-size: 11px; }
+
+.legend { display: flex; gap: 16px; padding: 10px 20px; font-size: 12px; color: #8899aa; }
+.leg-item { display: flex; align-items: center; gap: 6px; }
+.leg-box { width: 14px; height: 14px; border-radius: 3px; }
+
+.info-panel {
+  position: fixed; right: 0; top: 60px; bottom: 0; width: 220px;
+  background: #0a1f3a; border-left: 1px solid #1a3a60;
+  overflow-y: auto; padding: 12px;
+}
+.info-panel h4 { color: #4dd9e8; font-size: 12px; margin-bottom: 10px; }
+.info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px; }
+.info-key { color: #8899aa; }
+.info-val { color: #fff; font-family: monospace; }
+
+@media (max-width: 900px) { .info-panel { display: none; } }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <h1>Copa <em>Repsol</em> — Calibrador</h1>
+  <nav>
+    <a href="admin.html">Admin</a>
+    <a href="display.html" target="_blank">Display</a>
+  </nav>
+</div>
+
+<div class="cal-toolbar">
+  <label>Disciplina:</label>
+  <select id="discSel" onchange="loadDiscSafe(this.value)">
+    <option value="voley">Vóley Mixto</option>
+    <option value="padel">Pádel</option>
+    <option value="futbol_m">Fútbol Masculino</option>
+    <option value="futbol_f">Fútbol Femenino</option>
+  </select>
+  <label>Campo:</label>
+  <select id="campoSel" onchange="renderHandles()"></select>
+  <button class="btn btn-save"  onclick="saveCal()">💾 Guardar</button>
+  <button class="btn btn-reset" onclick="resetDisc()">↺ Restablecer</button>
+  <button class="btn" style="background:#1a5c30;color:#4eff99;border:1px solid #4eff99" onclick="copyJSON()">📋 Copiar JSON completo</button>
+  <div class="coord-badge" id="coordBadge">x: — &nbsp; y: —</div>
+</div>
+
+<div class="legend">
+  <div class="leg-item"><div class="leg-box" style="background:rgba(77,217,232,0.85)"></div> Equipo 1 (sets)</div>
+  <div class="leg-item"><div class="leg-box" style="background:rgba(232,82,26,0.85)"></div> Equipo 2 (sets)</div>
+  <div class="leg-item"><div class="leg-box" style="background:rgba(77,217,232,0.85);outline:2px solid #000"></div> Total / Marcador</div>
+</div>
+
+<div class="cal-area">
+  <div class="img-container" id="imgContainer">
+    <img id="calImg" src="" alt="">
+  </div>
+</div>
+
+<div class="info-panel" id="infoPanel">
+  <h4>Posiciones actuales</h4>
+  <div id="infoList"></div>
+</div>
+
+<script>
+const DISC = {
+  voley:    { name:'Vóley Mixto',       image:'voley.jpg',           type:'sets',
+    campos:[
+      {id:'c1',name:'Campo 1',matches:[['Perú','Croacia'],['EE.UU','México'],['Perú','Irán'],['Suiza','Corea del Sur'],['Senegal','Japón']]},
+      {id:'c2',name:'Campo 2',matches:[['Japón','Irán'],['Suiza','Uruguay'],['Senegal','Croacia'],['Uruguay','México'],['Croacia','Irán']]}
+    ]
+  },
+  padel:    { name:'Pádel',             image:'padel.jpg',           type:'sets',
+    campos:[
+      {id:'c1',name:'Campo 1',matches:[['Cánada','Australia'],['Arabia S.','Austria'],['Cánada','Egipto'],['Paraguay','Suecia'],['Panamá','Noruega']]},
+      {id:'c2',name:'Campo 2',matches:[['Noruega','Egipto'],['Paraguay','Turquía'],['Panamá','Australia'],['Turquía','Austria'],['Australia','Egipto']]}
+    ]
+  },
+  futbol_m: { name:'Fútbol Masculino',  image:'futbol_masculino.jpg',type:'score',
+    campos:[
+      {id:'c1',name:'Campo 1',matches:[['Inglaterra','España'],['Brasil','Portugal']]},
+      {id:'c2',name:'Campo 2',matches:[['Ecuador','Países Bajos']]}
+    ]
+  },
+  futbol_f: { name:'Fútbol Femenino',   image:'futbol_femenino.jpg', type:'score',
+    campos:[{id:'c2',name:'Campo 2',matches:[['Alemania','Bélgica'],['Alemania','Colombia'],['Bélgica','Colombia']]}]
+  }
+};
+
+function defaultCal(){
+  return {"voley":{"c1":{"0":{"t1s1":{"x":23.46,"y":32.68},"t1s2":{"x":29.54,"y":32.49},"t1s3":{"x":35.75,"y":32.49},"t1t":{"x":42.11,"y":32.68},"t2s1":{"x":23.6,"y":36.59},"t2s2":{"x":29.75,"y":36.49},"t2s3":{"x":35.89,"y":36.59},"t2t":{"x":42.18,"y":36.59}},"1":{"t1s1":{"x":23.46,"y":43.75},"t1s2":{"x":29.75,"y":43.66},"t1s3":{"x":35.89,"y":43.75},"t1t":{"x":42.18,"y":43.85},"t2s1":{"x":23.53,"y":47.57},"t2s2":{"x":29.82,"y":47.57},"t2s3":{"x":35.96,"y":47.66},"t2t":{"x":42.11,"y":47.76}},"2":{"t1s1":{"x":23.6,"y":54.83},"t1s2":{"x":29.61,"y":54.83},"t1s3":{"x":35.89,"y":54.83},"t1t":{"x":42.04,"y":54.83},"t2s1":{"x":23.6,"y":58.74},"t2s2":{"x":29.75,"y":58.74},"t2s3":{"x":36.03,"y":58.74},"t2t":{"x":42.04,"y":58.84}},"3":{"t1s1":{"x":23.53,"y":65.82},"t1s2":{"x":29.68,"y":65.82},"t1s3":{"x":35.82,"y":65.91},"t1t":{"x":42.11,"y":66},"t2s1":{"x":23.46,"y":69.73},"t2s2":{"x":29.68,"y":69.73},"t2s3":{"x":35.89,"y":69.73},"t2t":{"x":42.04,"y":69.91}},"4":{"t1s1":{"x":23.46,"y":76.99},"t1s2":{"x":29.68,"y":77.08},"t1s3":{"x":35.89,"y":76.9},"t1t":{"x":42.04,"y":76.99},"t2s1":{"x":23.46,"y":80.9},"t2s2":{"x":29.75,"y":80.9},"t2s3":{"x":35.89,"y":80.9},"t2t":{"x":42.18,"y":80.9}}},"c2":{"0":{"t1s1":{"x":70.11,"y":32.61},"t1s2":{"x":76.47,"y":32.61},"t1s3":{"x":82.68,"y":32.61},"t1t":{"x":88.76,"y":32.43},"t2s1":{"x":70.11,"y":36.52},"t2s2":{"x":76.4,"y":36.52},"t2s3":{"x":82.68,"y":36.43},"t2t":{"x":88.83,"y":36.71}},"1":{"t1s1":{"x":70.25,"y":43.79},"t1s2":{"x":76.12,"y":43.69},"t1s3":{"x":82.61,"y":43.69},"t1t":{"x":88.83,"y":43.97},"t2s1":{"x":70.25,"y":47.6},"t2s2":{"x":76.33,"y":47.51},"t2s3":{"x":82.54,"y":47.6},"t2t":{"x":88.83,"y":47.7}},"2":{"t1s1":{"x":70.25,"y":54.77},"t1s2":{"x":76.4,"y":54.86},"t1s3":{"x":82.68,"y":54.86},"t1t":{"x":88.83,"y":54.77},"t2s1":{"x":70.39,"y":58.59},"t2s2":{"x":76.47,"y":58.68},"t2s3":{"x":82.75,"y":58.68},"t2t":{"x":88.97,"y":58.77}},"3":{"t1s1":{"x":70.18,"y":65.94},"t1s2":{"x":76.4,"y":65.94},"t1s3":{"x":82.54,"y":65.94},"t1t":{"x":88.83,"y":65.85},"t2s1":{"x":70.25,"y":69.76},"t2s2":{"x":76.47,"y":69.76},"t2s3":{"x":82.61,"y":69.85},"t2t":{"x":88.83,"y":69.85}},"4":{"t1s1":{"x":70.04,"y":76.93},"t1s2":{"x":76.4,"y":77.02},"t1s3":{"x":82.68,"y":76.93},"t1t":{"x":88.83,"y":76.93},"t2s1":{"x":70.11,"y":80.84},"t2s2":{"x":76.47,"y":80.93},"t2s3":{"x":82.68,"y":80.93},"t2t":{"x":88.83,"y":81.02}}}},"padel":{"c1":{"0":{"t1s1":{"x":23.32,"y":32.61},"t1s2":{"x":29.54,"y":32.68},"t1s3":{"x":35.82,"y":32.68},"t1t":{"x":42.04,"y":32.68},"t2s1":{"x":23.32,"y":36.52},"t2s2":{"x":29.61,"y":36.49},"t2s3":{"x":35.89,"y":36.49},"t2t":{"x":42.04,"y":36.59}},"1":{"t1s1":{"x":23.39,"y":43.79},"t1s2":{"x":29.68,"y":43.75},"t1s3":{"x":35.89,"y":43.75},"t1t":{"x":42.04,"y":43.66},"t2s1":{"x":23.46,"y":47.51},"t2s2":{"x":29.61,"y":47.57},"t2s3":{"x":35.89,"y":47.66},"t2t":{"x":42.04,"y":47.66}},"2":{"t1s1":{"x":23.39,"y":54.77},"t1s2":{"x":29.61,"y":54.83},"t1s3":{"x":35.82,"y":54.83},"t1t":{"x":41.97,"y":54.93},"t2s1":{"x":23.39,"y":58.68},"t2s2":{"x":29.61,"y":58.74},"t2s3":{"x":35.82,"y":58.74},"t2t":{"x":42.04,"y":58.84}},"3":{"t1s1":{"x":23.32,"y":65.91},"t1s2":{"x":29.54,"y":65.91},"t1s3":{"x":35.75,"y":66},"t1t":{"x":41.97,"y":66},"t2s1":{"x":23.39,"y":69.73},"t2s2":{"x":29.54,"y":69.73},"t2s3":{"x":35.82,"y":69.91},"t2t":{"x":42.04,"y":69.91}},"4":{"t1s1":{"x":23.32,"y":76.99},"t1s2":{"x":29.54,"y":77.08},"t1s3":{"x":35.75,"y":76.99},"t1t":{"x":42.04,"y":77.08},"t2s1":{"x":23.39,"y":80.9},"t2s2":{"x":29.54,"y":80.9},"t2s3":{"x":35.82,"y":80.9},"t2t":{"x":42.04,"y":80.9}}},"c2":{"0":{"t1s1":{"x":70.18,"y":32.58},"t1s2":{"x":76.47,"y":32.68},"t1s3":{"x":82.75,"y":32.68},"t1t":{"x":88.76,"y":32.68},"t2s1":{"x":70.25,"y":36.49},"t2s2":{"x":76.61,"y":36.49},"t2s3":{"x":82.82,"y":36.49},"t2t":{"x":88.83,"y":36.59}},"1":{"t1s1":{"x":70.18,"y":43.75},"t1s2":{"x":76.26,"y":43.75},"t1s3":{"x":82.68,"y":43.75},"t1t":{"x":88.9,"y":43.85},"t2s1":{"x":70.25,"y":47.57},"t2s2":{"x":76.4,"y":47.66},"t2s3":{"x":82.68,"y":47.57},"t2t":{"x":88.83,"y":47.66}},"2":{"t1s1":{"x":70.18,"y":54.83},"t1s2":{"x":76.4,"y":54.74},"t1s3":{"x":82.68,"y":54.83},"t1t":{"x":88.83,"y":54.83},"t2s1":{"x":70.18,"y":58.74},"t2s2":{"x":76.4,"y":58.74},"t2s3":{"x":82.68,"y":58.74},"t2t":{"x":88.83,"y":58.74}},"3":{"t1s1":{"x":70.18,"y":65.82},"t1s2":{"x":76.4,"y":65.91},"t1s3":{"x":82.54,"y":66},"t1t":{"x":88.9,"y":66},"t2s1":{"x":70.18,"y":69.64},"t2s2":{"x":76.47,"y":69.73},"t2s3":{"x":82.68,"y":69.73},"t2t":{"x":88.9,"y":69.91}},"4":{"t1s1":{"x":70.18,"y":76.99},"t1s2":{"x":76.4,"y":76.9},"t1s3":{"x":82.61,"y":76.99},"t1t":{"x":88.83,"y":76.99},"t2s1":{"x":70.25,"y":80.9},"t2s2":{"x":76.47,"y":80.9},"t2s3":{"x":82.61,"y":80.9},"t2t":{"x":88.83,"y":80.99}}}},"futbol_m":{"c1":{"0":{"s1":{"x":41.97,"y":44.41},"s2":{"x":58.24,"y":44.41}},"1":{"s1":{"x":41.97,"y":50.55},"s2":{"x":58.52,"y":50.55}}},"c2":{"0":{"s1":{"x":42.04,"y":73.58},"s2":{"x":58.24,"y":73.58}}}},"futbol_f":{"c2":{"0":{"s1":{"x":41.9,"y":52.82},"s2":{"x":58.24,"y":52.72}},"1":{"s1":{"x":41.97,"y":59.05},"s2":{"x":58.24,"y":58.87}},"2":{"s1":{"x":42.04,"y":65.29},"s2":{"x":58.24,"y":65.01}}}}};
+}
+
+function loadCal(){ try{ return JSON.parse(localStorage.getItem('copa_cal')||'null') || defaultCal(); }catch{ return defaultCal(); } }
+
+let cal = loadCal();
+let currentDisc = 'voley';
+let currentCampo = 'c1';
+
+function loadDisc(disc) {
+  currentDisc = disc;
+  const d = DISC[disc];
+  document.getElementById('calImg').src = d.image;
+
+  const sel = document.getElementById('campoSel');
+  sel.innerHTML = d.campos.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  currentCampo = d.campos[0].id;
+  sel.value = currentCampo;
+  sel.onchange = () => { currentCampo = sel.value; renderHandles(); };
+
+  renderHandles();
+}
+
+function renderHandles() {
+  const container = document.getElementById('imgContainer');
+  container.querySelectorAll('.drag-handle').forEach(e => e.remove());
+
+  const d = DISC[currentDisc];
+  const campo = d.campos.find(c => c.id === currentCampo);
+  if (!campo) return;
+
+  const discCal = cal[currentDisc] || {};
+  const campoCal = discCal[currentCampo] || {};
+
+  const fields = d.type === 'sets'
+    ? [
+        { f:'t1s1',label:'S1',cls:'t1' }, { f:'t1s2',label:'S2',cls:'t1' }, { f:'t1s3',label:'S3',cls:'t1' }, { f:'t1t',label:'TOT',cls:'t1 tot' },
+        { f:'t2s1',label:'S1',cls:'t2' }, { f:'t2s2',label:'S2',cls:'t2' }, { f:'t2s3',label:'S3',cls:'t2' }, { f:'t2t',label:'TOT',cls:'t2 tot' }
+      ]
+    : [
+        { f:'s1',label:'GOL1',cls:'t1' }, { f:'s2',label:'GOL2',cls:'t2' }
+      ];
+
+  campo.matches.forEach((teams, mi) => {
+    const mc = campoCal[mi] || {};
+    fields.forEach(({f, label, cls}) => {
+      const pos = mc[f] || { x: 50, y: 50 };
+      const el = document.createElement('div');
+      el.className = 'drag-handle ' + cls;
+      el.style.left = pos.x + '%';
+      el.style.top  = pos.y + '%';
+      el.title = `${teams[0]} vs ${teams[1]} — ${f}`;
+      const teamName = f.startsWith('t2') || f==='s2' ? teams[1] : teams[0];
+      el.innerHTML = `<div style="font-size:9px;opacity:.7">${teamName.substring(0,7)}</div><div>${label}</div>`;
+      el.dataset.disc  = currentDisc;
+      el.dataset.campo = currentCampo;
+      el.dataset.mi    = mi;
+      el.dataset.field = f;
+      makeDraggable(el);
+      container.appendChild(el);
+    });
+  });
+
+  updateInfoPanel();
+}
+
+function makeDraggable(el) {
+  el.addEventListener('mousedown', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    const container = document.getElementById('imgContainer');
+    const rect = container.getBoundingClientRect();
+
+    function onMove(ev) {
+      const x = Math.max(0, Math.min(100, ((ev.clientX - rect.left) / rect.width)  * 100));
+      const y = Math.max(0, Math.min(100, ((ev.clientY - rect.top)  / rect.height) * 100));
+      el.style.left = x.toFixed(2) + '%';
+      el.style.top  = y.toFixed(2) + '%';
+      document.getElementById('coordBadge').textContent = `x: ${x.toFixed(1)}%  y: ${y.toFixed(1)}%`;
+
+      // update live in cal object
+      const { disc, campo, mi, field } = el.dataset;
+      if (!cal[disc]) cal[disc] = {};
+      if (!cal[disc][campo]) cal[disc][campo] = {};
+      if (!cal[disc][campo][mi]) cal[disc][campo][mi] = {};
+      cal[disc][campo][mi][field] = { x: parseFloat(x.toFixed(2)), y: parseFloat(y.toFixed(2)) };
+    }
+
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      updateInfoPanel();
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+function copyJSON() {
+  const text = JSON.stringify(cal, null, 2);
+  navigator.clipboard.writeText(text).then(() => {
+    const badge = document.getElementById('coordBadge');
+    const orig = badge.textContent;
+    badge.textContent = '✓ JSON copiado al portapapeles';
+    badge.style.color = '#4eff99';
+    setTimeout(() => { badge.textContent = orig; badge.style.color = ''; }, 2000);
+  }).catch(() => {
+    // Fallback: mostrar en textarea
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:10px;left:10px;width:90vw;height:80vh;z-index:9999;font-size:11px;font-family:monospace;background:#071629;color:#4eff99;border:2px solid #4eff99;padding:10px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = 'Cerrar';
+    closeBtn.style.cssText = 'position:fixed;top:10px;right:10px;z-index:10000;padding:8px 16px;background:#e8521a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px';
+    closeBtn.onclick = () => { ta.remove(); closeBtn.remove(); };
+    document.body.appendChild(closeBtn);
+  });
+}
+
+function saveCal() {
+  localStorage.setItem('copa_cal', JSON.stringify(cal));
+  const badge = document.getElementById('coordBadge');
+  const orig = badge.textContent;
+  badge.textContent = '✓ Guardado';
+  badge.style.color = '#22ff88';
+  setTimeout(() => { badge.textContent = orig; badge.style.color = ''; }, 1500);
+}
+
+function resetDisc() {
+  if (!confirm(`¿Restablecer calibración de ${DISC[currentDisc].name}?`)) return;
+  const def = defaultCal();
+  cal[currentDisc] = def[currentDisc];
+  renderHandles();
+}
+
+function updateInfoPanel() {
+  const d = DISC[currentDisc];
+  const campo = d.campos.find(c => c.id === currentCampo);
+  if (!campo) return;
+  const cc = (cal[currentDisc]||{})[currentCampo] || {};
+  const fields = d.type==='sets'
+    ? ['t1s1','t1s2','t1s3','t1t','t2s1','t2s2','t2s3','t2t']
+    : ['s1','s2'];
+
+  let html = '';
+  campo.matches.forEach((teams, mi) => {
+    html += `<div style="color:#4dd9e8;font-size:11px;margin:8px 0 4px">${teams[0]} vs ${teams[1]}</div>`;
+    const mc = cc[mi] || {};
+    fields.forEach(f => {
+      const p = mc[f];
+      html += `<div class="info-row"><span class="info-key">${f}</span><span class="info-val">${p ? p.x.toFixed(1)+'%, '+p.y.toFixed(1)+'%' : '—'}</span></div>`;
+    });
+  });
+  document.getElementById('infoList').innerHTML = html;
+}
+
+// Init — handle cached images
+function loadDiscSafe(disc) {
+  const img = document.getElementById('calImg');
+  img.onload = renderHandles;
+  loadDisc(disc);
+  if (img.complete && img.naturalWidth > 0) renderHandles();
+}
+
+loadDiscSafe('voley');
+</script>
+</body>
+</html>

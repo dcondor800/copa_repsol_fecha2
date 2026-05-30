@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Copa Repsol — Display</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body { background: #000; }
+.tab-panel { padding: 0; }
+.img-frame { max-width: 1200px; margin: 0 auto; }
+</style>
+</head>
+<body>
+<div class="top-bar" id="topBar">
+  <h1>Copa <em>Repsol</em> — Display</h1>
+  <nav>
+    <a href="admin.html" target="_blank">Admin</a>
+    <a href="calibrator.html" target="_blank">Calibrador</a>
+    <a href="#" onclick="toggleUI();return false;">Ocultar UI</a>
+  </nav>
+</div>
+<div class="tab-bar" id="tabBar"></div>
+<div id="panels"></div>
+
+<script>
+const DISC = {
+  voley:    { name:'Vóley Mixto',       image:'voley.jpg',           type:'sets',
+    campos:[
+      {id:'c1',matches:[{t:['Perú','Croacia']},{t:['EE.UU','México']},{t:['Perú','Irán']},{t:['Suiza','Corea del Sur']},{t:['Senegal','Japón']}]},
+      {id:'c2',matches:[{t:['Japón','Irán']},{t:['Suiza','Uruguay']},{t:['Senegal','Croacia']},{t:['Uruguay','México']},{t:['Croacia','Irán']}]}
+    ]
+  },
+  padel:    { name:'Pádel',             image:'padel.jpg',           type:'sets',
+    campos:[
+      {id:'c1',matches:[{t:['Cánada','Australia']},{t:['Arabia S.','Austria']},{t:['Cánada','Egipto']},{t:['Paraguay','Suecia']},{t:['Panamá','Noruega']}]},
+      {id:'c2',matches:[{t:['Noruega','Egipto']},{t:['Paraguay','Turquía']},{t:['Panamá','Australia']},{t:['Turquía','Austria']},{t:['Australia','Egipto']}]}
+    ]
+  },
+  futbol_m: { name:'Fútbol Masculino',  image:'futbol_masculino.jpg',type:'score',
+    campos:[
+      {id:'c1',matches:[{t:['Inglaterra','España']},{t:['Brasil','Portugal']}]},
+      {id:'c2',matches:[{t:['Ecuador','Países Bajos']}]}
+    ]
+  },
+  futbol_f: { name:'Fútbol Femenino',   image:'futbol_femenino.jpg', type:'score',
+    campos:[
+      {id:'c2',matches:[{t:['Alemania','Bélgica']},{t:['Alemania','Colombia']},{t:['Bélgica','Colombia']}]}
+    ]
+  }
+};
+
+function sKey(disc,cid,mi,f){ return `${disc}_${cid}_${mi}_${f}`; }
+function getScores(){ try{ return JSON.parse(localStorage.getItem('copa_scores')||'{}'); }catch{ return {}; } }
+function getCal(){ try{ return JSON.parse(localStorage.getItem('copa_cal')||'null') || defaultCal(); }catch{ return defaultCal(); } }
+
+function defaultCal(){
+  return {"voley":{"c1":{"0":{"t1s1":{"x":23.46,"y":32.68},"t1s2":{"x":29.54,"y":32.49},"t1s3":{"x":35.75,"y":32.49},"t1t":{"x":42.11,"y":32.68},"t2s1":{"x":23.6,"y":36.59},"t2s2":{"x":29.75,"y":36.49},"t2s3":{"x":35.89,"y":36.59},"t2t":{"x":42.18,"y":36.59}},"1":{"t1s1":{"x":23.46,"y":43.75},"t1s2":{"x":29.75,"y":43.66},"t1s3":{"x":35.89,"y":43.75},"t1t":{"x":42.18,"y":43.85},"t2s1":{"x":23.53,"y":47.57},"t2s2":{"x":29.82,"y":47.57},"t2s3":{"x":35.96,"y":47.66},"t2t":{"x":42.11,"y":47.76}},"2":{"t1s1":{"x":23.6,"y":54.83},"t1s2":{"x":29.61,"y":54.83},"t1s3":{"x":35.89,"y":54.83},"t1t":{"x":42.04,"y":54.83},"t2s1":{"x":23.6,"y":58.74},"t2s2":{"x":29.75,"y":58.74},"t2s3":{"x":36.03,"y":58.74},"t2t":{"x":42.04,"y":58.84}},"3":{"t1s1":{"x":23.53,"y":65.82},"t1s2":{"x":29.68,"y":65.82},"t1s3":{"x":35.82,"y":65.91},"t1t":{"x":42.11,"y":66},"t2s1":{"x":23.46,"y":69.73},"t2s2":{"x":29.68,"y":69.73},"t2s3":{"x":35.89,"y":69.73},"t2t":{"x":42.04,"y":69.91}},"4":{"t1s1":{"x":23.46,"y":76.99},"t1s2":{"x":29.68,"y":77.08},"t1s3":{"x":35.89,"y":76.9},"t1t":{"x":42.04,"y":76.99},"t2s1":{"x":23.46,"y":80.9},"t2s2":{"x":29.75,"y":80.9},"t2s3":{"x":35.89,"y":80.9},"t2t":{"x":42.18,"y":80.9}}},"c2":{"0":{"t1s1":{"x":70.11,"y":32.61},"t1s2":{"x":76.47,"y":32.61},"t1s3":{"x":82.68,"y":32.61},"t1t":{"x":88.76,"y":32.43},"t2s1":{"x":70.11,"y":36.52},"t2s2":{"x":76.4,"y":36.52},"t2s3":{"x":82.68,"y":36.43},"t2t":{"x":88.83,"y":36.71}},"1":{"t1s1":{"x":70.25,"y":43.79},"t1s2":{"x":76.12,"y":43.69},"t1s3":{"x":82.61,"y":43.69},"t1t":{"x":88.83,"y":43.97},"t2s1":{"x":70.25,"y":47.6},"t2s2":{"x":76.33,"y":47.51},"t2s3":{"x":82.54,"y":47.6},"t2t":{"x":88.83,"y":47.7}},"2":{"t1s1":{"x":70.25,"y":54.77},"t1s2":{"x":76.4,"y":54.86},"t1s3":{"x":82.68,"y":54.86},"t1t":{"x":88.83,"y":54.77},"t2s1":{"x":70.39,"y":58.59},"t2s2":{"x":76.47,"y":58.68},"t2s3":{"x":82.75,"y":58.68},"t2t":{"x":88.97,"y":58.77}},"3":{"t1s1":{"x":70.18,"y":65.94},"t1s2":{"x":76.4,"y":65.94},"t1s3":{"x":82.54,"y":65.94},"t1t":{"x":88.83,"y":65.85},"t2s1":{"x":70.25,"y":69.76},"t2s2":{"x":76.47,"y":69.76},"t2s3":{"x":82.61,"y":69.85},"t2t":{"x":88.83,"y":69.85}},"4":{"t1s1":{"x":70.04,"y":76.93},"t1s2":{"x":76.4,"y":77.02},"t1s3":{"x":82.68,"y":76.93},"t1t":{"x":88.83,"y":76.93},"t2s1":{"x":70.11,"y":80.84},"t2s2":{"x":76.47,"y":80.93},"t2s3":{"x":82.68,"y":80.93},"t2t":{"x":88.83,"y":81.02}}}},"padel":{"c1":{"0":{"t1s1":{"x":23.32,"y":32.61},"t1s2":{"x":29.54,"y":32.68},"t1s3":{"x":35.82,"y":32.68},"t1t":{"x":42.04,"y":32.68},"t2s1":{"x":23.32,"y":36.52},"t2s2":{"x":29.61,"y":36.49},"t2s3":{"x":35.89,"y":36.49},"t2t":{"x":42.04,"y":36.59}},"1":{"t1s1":{"x":23.39,"y":43.79},"t1s2":{"x":29.68,"y":43.75},"t1s3":{"x":35.89,"y":43.75},"t1t":{"x":42.04,"y":43.66},"t2s1":{"x":23.46,"y":47.51},"t2s2":{"x":29.61,"y":47.57},"t2s3":{"x":35.89,"y":47.66},"t2t":{"x":42.04,"y":47.66}},"2":{"t1s1":{"x":23.39,"y":54.77},"t1s2":{"x":29.61,"y":54.83},"t1s3":{"x":35.82,"y":54.83},"t1t":{"x":41.97,"y":54.93},"t2s1":{"x":23.39,"y":58.68},"t2s2":{"x":29.61,"y":58.74},"t2s3":{"x":35.82,"y":58.74},"t2t":{"x":42.04,"y":58.84}},"3":{"t1s1":{"x":23.32,"y":65.91},"t1s2":{"x":29.54,"y":65.91},"t1s3":{"x":35.75,"y":66},"t1t":{"x":41.97,"y":66},"t2s1":{"x":23.39,"y":69.73},"t2s2":{"x":29.54,"y":69.73},"t2s3":{"x":35.82,"y":69.91},"t2t":{"x":42.04,"y":69.91}},"4":{"t1s1":{"x":23.32,"y":76.99},"t1s2":{"x":29.54,"y":77.08},"t1s3":{"x":35.75,"y":76.99},"t1t":{"x":42.04,"y":77.08},"t2s1":{"x":23.39,"y":80.9},"t2s2":{"x":29.54,"y":80.9},"t2s3":{"x":35.82,"y":80.9},"t2t":{"x":42.04,"y":80.9}}},"c2":{"0":{"t1s1":{"x":70.18,"y":32.58},"t1s2":{"x":76.47,"y":32.68},"t1s3":{"x":82.75,"y":32.68},"t1t":{"x":88.76,"y":32.68},"t2s1":{"x":70.25,"y":36.49},"t2s2":{"x":76.61,"y":36.49},"t2s3":{"x":82.82,"y":36.49},"t2t":{"x":88.83,"y":36.59}},"1":{"t1s1":{"x":70.18,"y":43.75},"t1s2":{"x":76.26,"y":43.75},"t1s3":{"x":82.68,"y":43.75},"t1t":{"x":88.9,"y":43.85},"t2s1":{"x":70.25,"y":47.57},"t2s2":{"x":76.4,"y":47.66},"t2s3":{"x":82.68,"y":47.57},"t2t":{"x":88.83,"y":47.66}},"2":{"t1s1":{"x":70.18,"y":54.83},"t1s2":{"x":76.4,"y":54.74},"t1s3":{"x":82.68,"y":54.83},"t1t":{"x":88.83,"y":54.83},"t2s1":{"x":70.18,"y":58.74},"t2s2":{"x":76.4,"y":58.74},"t2s3":{"x":82.68,"y":58.74},"t2t":{"x":88.83,"y":58.74}},"3":{"t1s1":{"x":70.18,"y":65.82},"t1s2":{"x":76.4,"y":65.91},"t1s3":{"x":82.54,"y":66},"t1t":{"x":88.9,"y":66},"t2s1":{"x":70.18,"y":69.64},"t2s2":{"x":76.47,"y":69.73},"t2s3":{"x":82.68,"y":69.73},"t2t":{"x":88.9,"y":69.91}},"4":{"t1s1":{"x":70.18,"y":76.99},"t1s2":{"x":76.4,"y":76.9},"t1s3":{"x":82.61,"y":76.99},"t1t":{"x":88.83,"y":76.99},"t2s1":{"x":70.25,"y":80.9},"t2s2":{"x":76.47,"y":80.9},"t2s3":{"x":82.61,"y":80.9},"t2t":{"x":88.83,"y":80.99}}}},"futbol_m":{"c1":{"0":{"s1":{"x":41.97,"y":44.41},"s2":{"x":58.24,"y":44.41}},"1":{"s1":{"x":41.97,"y":50.55},"s2":{"x":58.52,"y":50.55}}},"c2":{"0":{"s1":{"x":42.04,"y":73.58},"s2":{"x":58.24,"y":73.58}}}},"futbol_f":{"c2":{"0":{"s1":{"x":41.9,"y":52.82},"s2":{"x":58.24,"y":52.72}},"1":{"s1":{"x":41.97,"y":59.05},"s2":{"x":58.24,"y":58.87}},"2":{"s1":{"x":42.04,"y":65.29},"s2":{"x":58.24,"y":65.01}}}}};
+}
+
+function renderOverlays(disc, frameEl) {
+  frameEl.querySelectorAll('.ov').forEach(e => e.remove());
+  const scores = getScores();
+  const cal = getCal();
+  const d = DISC[disc];
+  const discCal = cal[disc] || {};
+
+  d.campos.forEach(campo => {
+    const cc = discCal[campo.id] || {};
+    campo.matches.forEach((m, mi) => {
+      const mc = cc[mi] || {};
+      const fields = d.type === 'sets'
+        ? ['t1s1','t1s2','t1s3','t1t','t2s1','t2s2','t2s3','t2t']
+        : ['s1','s2'];
+      fields.forEach(f => {
+        const pos = mc[f];
+        const val = scores[sKey(disc, campo.id, mi, f)];
+        if (!pos || val === undefined || val === '') return;
+        const el = document.createElement('span');
+        const isTotal = f.endsWith('t');
+        const isFut = d.type === 'score';
+        const isSets = d.type === 'sets' && !isTotal;
+        el.className = 'ov' + (isFut ? ' fut' : (isTotal ? ' tot' : '')) + (isSets ? ' wht' : '');
+        el.style.left = pos.x + '%';
+        el.style.top  = pos.y + '%';
+        el.textContent = val;
+        frameEl.appendChild(el);
+      });
+    });
+  });
+}
+
+function renderAll() {
+  Object.keys(DISC).forEach(disc => {
+    const frame = document.getElementById('frame-' + disc);
+    if (frame) renderOverlays(disc, frame);
+  });
+}
+
+let activeDisc = 'voley';
+function switchTab(disc) {
+  activeDisc = disc;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.disc===disc));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.disc===disc));
+}
+
+function init() {
+  const bar = document.getElementById('tabBar');
+  const panels = document.getElementById('panels');
+  Object.keys(DISC).forEach((disc, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (i===0?' active':'');
+    btn.dataset.disc = disc;
+    btn.textContent = DISC[disc].name;
+    btn.onclick = () => switchTab(disc);
+    bar.appendChild(btn);
+
+    const p = document.createElement('div');
+    p.className = 'tab-panel' + (i===0?' active':'');
+    p.dataset.disc = disc;
+
+    const frame = document.createElement('div');
+    frame.className = 'img-frame';
+    const img = document.createElement('img');
+    img.src = DISC[disc].image;
+    img.alt = DISC[disc].name;
+    frame.appendChild(img);
+    frame.id = 'frame-' + disc;
+    frame.style.position = 'relative';
+    p.appendChild(frame);
+    panels.appendChild(p);
+  });
+  renderAll();
+}
+
+let uiVisible = true;
+function toggleUI() {
+  uiVisible = !uiVisible;
+  ['topBar','tabBar'].forEach(id => {
+    document.getElementById(id).style.display = uiVisible ? '' : 'none';
+  });
+}
+
+window.addEventListener('storage', e => {
+  if (e.key === 'copa_scores' || e.key === 'copa_cal') renderAll();
+});
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #071629; color: #fff; min-height: 100vh; }
+
+.top-bar {
+  background: #0d2144; padding: 12px 20px;
+  display: flex; align-items: center; gap: 12px;
+  border-bottom: 3px solid #e8521a;
+}
+.top-bar h1 { font-size: 20px; font-weight: 700; }
+.top-bar h1 em { color: #e8521a; font-style: normal; }
+.top-bar nav { margin-left: auto; display: flex; gap: 8px; }
+.top-bar nav a {
+  padding: 6px 14px; border: 1px solid #4dd9e8; border-radius: 6px;
+  color: #4dd9e8; text-decoration: none; font-size: 13px; transition: .2s;
+}
+.top-bar nav a:hover { background: #4dd9e8; color: #071629; }
+
+.tab-bar { display: flex; gap: 3px; padding: 14px 20px 0; background: #0d2144; }
+.tab-btn {
+  padding: 9px 18px; border: none; border-radius: 8px 8px 0 0;
+  background: #0a1a33; color: #8899aa; cursor: pointer;
+  font-size: 13px; font-weight: 600; transition: .2s;
+}
+.tab-btn.active { background: #e8521a; color: #fff; }
+.tab-btn:hover:not(.active) { color: #fff; background: #132a4a; }
+
+.tab-panel { display: none; padding: 20px; }
+.tab-panel.active { display: block; }
+
+.campos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+.campo-card {
+  background: #0d2144; border: 1px solid #1a3a60;
+  border-radius: 10px; padding: 16px;
+}
+.campo-card h3 {
+  color: #4dd9e8; font-size: 13px; text-transform: uppercase;
+  letter-spacing: 1px; margin-bottom: 14px;
+}
+
+.match-block { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #132a4a; }
+.match-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.match-block.hi { border-left: 3px solid #e8521a; padding-left: 8px; }
+
+.team-row { display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
+.team-name { width: 108px; font-size: 12px; color: #ddd; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vs-label { font-size: 10px; color: #445566; padding-left: 113px; margin: 1px 0; }
+.sep { width: 1px; height: 14px; background: #1a3a60; margin: 0 2px; }
+
+.score-inp {
+  width: 34px; height: 27px; background: #fff; border: 2px solid #ccc;
+  border-radius: 6px; text-align: center; font-weight: 700; font-size: 13px;
+  color: #111; outline: none; transition: border-color .2s;
+}
+.score-inp:focus { border-color: #e8521a; }
+.score-inp.lg { width: 44px; height: 30px; background: #fffbe6; font-size: 15px; }
+.score-inp.xl { width: 48px; height: 32px; font-size: 16px; font-weight: 800; }
+
+.futbol-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.futbol-row:last-child { margin-bottom: 0; }
+.ft { flex: 1; font-size: 13px; font-weight: 600; }
+.ft.l { text-align: right; }
+.ft.r { text-align: left; }
+.vs-badge { color: #445566; font-weight: 800; font-size: 12px; flex-shrink: 0; }
+
+.export-btn {
+  margin-top: 18px; padding: 10px 22px; background: #e8521a;
+  border: none; border-radius: 8px; color: #fff; font-weight: 700;
+  font-size: 14px; cursor: pointer; transition: .2s; display: block;
+}
+.export-btn:hover { background: #ff6530; }
+
+.img-frame { position: relative; display: block; line-height: 0; }
+.img-frame img { width: 100%; display: block; }
+
+.ov {
+  position: absolute; transform: translate(-50%, -50%);
+  font-weight: 900; color: #111; pointer-events: none;
+  font-size: 1.25vw; line-height: 1; font-family: 'Segoe UI', sans-serif;
+}
+.ov.tot { font-size: 1.5vw; }
+.ov.fut { font-size: 2.1vw; }
+.ov.wht { color: #ffffff; }
