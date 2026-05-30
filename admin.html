@@ -210,7 +210,7 @@ function pintarScores(ctx, disc, d, scores, cal, W, H) {
         if (!pos || val === undefined || val === '') return;
         const isTotal = f.endsWith('t'), isFut = d.type === 'score', isSets = d.type === 'sets' && !isTotal;
         ctx.fillStyle = isSets ? '#ffffff' : '#111111';
-        ctx.font = `bold ${isFut ? 22 : isTotal ? 18 : 15}px Arial, sans-serif`;
+        ctx.font = `bold ${isFut ? 38 : isTotal ? 28 : 22}px Arial, sans-serif`;
         ctx.fillText(String(val), (pos.x/100)*W, (pos.y/100)*H);
       });
     });
@@ -231,7 +231,7 @@ function abrirVentana(disc, d, scores, cal) {
         if (!pos || val === undefined || val === '') return;
         const isTotal = f.endsWith('t'), isFut = d.type === 'score', isSets = d.type === 'sets' && !isTotal;
         const color = isSets ? '#fff' : '#111';
-        const fs = isFut ? '2.1vw' : isTotal ? '1.5vw' : '1.25vw';
+        const fs = isFut ? '3.5vw' : isTotal ? '2.4vw' : '2vw';
         spans += `<span style="position:absolute;left:${pos.x}%;top:${pos.y}%;transform:translate(-50%,-50%);font-weight:900;color:${color};font-size:${fs};line-height:1;font-family:Arial,sans-serif;pointer-events:none">${val}</span>`;
       });
     });
