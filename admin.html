@@ -33,17 +33,25 @@ const DISC = {
     ]
   },
   padel: {
-    name: 'Pádel', image: 'padel.jpg', type: 'sets',
+    name: 'Pádel', image: 'padel.jpeg', type: 'sets',
     campos: [
       {id:'c1', name:'Campo 1', matches:[
-        {t:['Cánada','Australia'],hi:0}, {t:['Arabia S.','Austria'],hi:1},
-        {t:['Cánada','Egipto'],hi:0}, {t:['Paraguay','Suecia'],hi:1},
+        {t:['Canadá','Australia'],hi:0},
+        {t:['Canadá','Egipto'],hi:1},
         {t:['Panamá','Noruega'],hi:0}
       ]},
       {id:'c2', name:'Campo 2', matches:[
-        {t:['Noruega','Egipto'],hi:0}, {t:['Paraguay','Turquía'],hi:1},
-        {t:['Panamá','Australia'],hi:0}, {t:['Turquía','Austria'],hi:1},
+        {t:['Noruega','Egipto'],hi:0},
+        {t:['Panamá','Australia'],hi:1},
         {t:['Australia','Egipto'],hi:0}
+      ]},
+      {id:'c3', name:'Campo 3', matches:[
+        {t:['Arabia S.','Austria'],hi:1},
+        {t:['Paraguay','Suecia'],hi:0}
+      ]},
+      {id:'c4', name:'Campo 4', matches:[
+        {t:['Paraguay','Turquía'],hi:1},
+        {t:['Turquía','Austria'],hi:0}
       ]}
     ]
   },
